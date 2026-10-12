@@ -1,0 +1,13 @@
+build/
+*.uf2
+*.elf
+*.bin
+__pycache__/
+*.pyc
+sensor-log.csv
+.venv/
+.cache/
+firmware/build/
+.pytest_cache/
+*.log
+vendor/
