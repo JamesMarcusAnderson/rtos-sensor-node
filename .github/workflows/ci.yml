@@ -1,0 +1,37 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -r host/requirements.txt pytest
+      - run: python -m py_compile host/monitor.py
+      - run: python -m pytest host/test_monitor.py -q
+      # This repo's committed artifact is a CSV, not docs/output.json.
+      - run: python -c "import csv; rows=list(csv.DictReader(open('docs/sensor-log.csv'))); assert rows and rows[0]['temp_c'], rows"
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARM toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build gcc-arm-none-eabi \
+            libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+      - name: Fetch pico-sdk and FreeRTOS-Kernel
+        run: |
+          git clone --depth 1 --recurse-submodules --shallow-submodules \
+            https://github.com/raspberrypi/pico-sdk.git "$RUNNER_TEMP/pico-sdk"
+          git clone --depth 1 --branch V11.1.0 \
+            https://github.com/FreeRTOS/FreeRTOS-Kernel.git "$RUNNER_TEMP/FreeRTOS-Kernel"
+      - name: Build firmware
+        env:
+          PICO_SDK_PATH: ${{ runner.temp }}/pico-sdk
+          FREERTOS_KERNEL_PATH: ${{ runner.temp }}/FreeRTOS-Kernel
+        run: |
+          cmake -G Ninja -S firmware -B build -DPICO_BOARD=pico -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          test -s build/sensor_node.uf2
