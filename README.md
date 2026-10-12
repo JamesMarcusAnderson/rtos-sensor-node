@@ -7,6 +7,20 @@ status LED.
 Embedded Firmware Engineer (entry-level) · RTOS Software Engineer (entry-level) ·
 Microcontroller Firmware Engineer · Firmware Design Engineer
 
+## Output
+See `docs/sensor-log.csv`. The `sensor` column reports `ok` or `fault` per
+sample, so a missing TMP102 is visible in the log rather than silently
+producing zeros.
+
+## Quickstart
+```bash
+# copy build/sensor_node.uf2 onto the Pico (BOOTSEL drag-and-drop)
+pip install -r host/requirements.txt
+python host/monitor.py --port /dev/ttyACM0 --seconds 30
+```
+Exits nonzero if fewer than `--min-samples` rows were captured, and reports a
+port error instead of raising.
+
 ## Task layout
 | Task      | Priority | Period | Responsibility                                |
 |-----------|----------|--------|-----------------------------------------------|
@@ -31,20 +45,6 @@ cmake --build build          # -> build/sensor_node.uf2
 `firmware/FreeRTOSConfig.h` is checked in and tuned for the Cortex-M0+ port
 (`configPRIO_BITS=2`, kernel at the lowest priority, `configTICK_RATE_HZ=1000`,
 80 KB heap — task stacks total ~16.3 KB).
-
-## Quickstart
-```bash
-# copy build/sensor_node.uf2 onto the Pico (BOOTSEL drag-and-drop)
-pip install -r host/requirements.txt
-python host/monitor.py --port /dev/ttyACM0 --seconds 30
-```
-Exits nonzero if fewer than `--min-samples` rows were captured, and reports a
-port error instead of raising.
-
-## Output
-See `docs/sensor-log.csv`. The `sensor` column reports `ok` or `fault` per
-sample, so a missing TMP102 is visible in the log rather than silently
-producing zeros.
 
 ## Tests
 ```bash
